@@ -143,9 +143,9 @@ http://server-ip:port/api
 
 
 ## Deployment
+[![Deploy](https://www.herokucdn.com/deploy/button.svg "Deploy to Heroku")](https://heroku.com/deploy?template=https://github.com/kishanmodi/Torrent-Scrapper-API/main)
 
 To deploy this project on heroku run
-
 
 #### Login to Heroku
 ```bash
