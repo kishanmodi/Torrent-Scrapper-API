@@ -1,12 +1,17 @@
 
 # Torrent Scrapper API
 
-A API to Scrap Magnet Link from 1337x, It provides the top seeded result from your query. Scrapping is done using [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Python3](https://www.python.org/). API is hosted on [Heroku](heroku.com).
+An API to Scrap Magnet/Torrent Links from 1337x, It provides the top seeded result from your query. Scrapping is done using [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Python3](https://www.python.org/). API is hosted on [Heroku](heroku.com).
 
 
 ## Demo
-
+#### API 
 https://tscrap.herokuapp.com/
+#### Web App
+https://magnet-s.vercel.app/
+#### Telegram Bot
+[Magnet Scrapper BOT](https://t.me/magnetscrapperbot)
+
 
 
 ## API Reference
@@ -25,7 +30,10 @@ GET /sites
 GET /torrents
 
 Parameters:
-  {"key" : "key"}
+  {
+    "key" : "key",
+    "safe" : true
+  }
 ```
 
 #### Get magnet link and file list
