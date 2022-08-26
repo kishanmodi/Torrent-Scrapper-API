@@ -2,9 +2,14 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from flask import Flask, request, Response
+from flask_cors import CORS
+from profanityfilter import ProfanityFilter
+import re
+
 
 sitesAvailable = [{"id": 1, "name": "1337x"}]
 
+pf = ProfanityFilter()
 home = [
     {"route_id": 1, "route_name": "Home", "route_url": "/"},
     {"route_id": 2, "route_name": "Torrent List", "route_url": "/torrents"},
@@ -13,15 +18,23 @@ home = [
 ]
 
 
-def getTorrentsList(search_key):
-    url="https://www.1377x.to/search/" + search_key + "/1/"
+def filterTorrents(torrents):
+    with open("blocklist.txt", "r") as file:
+        blocklist = file.read().split("\n")
+        matchList = [s for s in torrents for xs in blocklist if len(
+            re.findall(rf'\b{xs}\b', s["name"].lower())) > 0]
+        return [i for i in torrents if i not in matchList]
+
+
+def getTorrentsList(search_key, do_safe_search):
+    url = "https://www.1377x.to/search/" + search_key + "/1/"
     response = requests.get(url, verify=False)
     data = []
     soup = BeautifulSoup(response.text, "lxml")
     table_body = soup.find("tbody")
     rows = table_body.find_all("tr")
-    if len(rows) > 10:
-        length = 10
+    if len(rows) > 20:
+        length = 20
     else:
         length = len(rows)
     for i in range(0, length):
@@ -29,6 +42,8 @@ def getTorrentsList(search_key):
         col1 = cols[0].find_all("a")[1]
         name = col1.text
         url = "https://www.1377x.to/" + col1['href']
+        if do_safe_search and pf.is_profane(name):
+            continue
         data.append(
             {
                 "name": name,
@@ -40,7 +55,10 @@ def getTorrentsList(search_key):
                 "uploader": cols[5].text,
             }
         )
-    return data
+    if do_safe_search:
+        return filterTorrents(data)
+    else:
+        return data
 
 
 def gettorrentdata(link):
@@ -48,7 +66,8 @@ def gettorrentdata(link):
     files = []
     data = {}
     soup = BeautifulSoup(response.text, "lxml")
-    magnet = soup.find("a", {"class": "l3426749b3b895e9356348e295596e5f2634c98d8"})
+    magnet = soup.find(
+        "a", {"class": "l3426749b3b895e9356348e295596e5f2634c98d8"})
     magnet = magnet["href"]
     div = soup.find("div", {"class": "file-content"})
     lis = div.find_all("li")
@@ -60,10 +79,13 @@ def gettorrentdata(link):
 
 
 app = Flask(__name__)
+CORS(app)
+
 
 @app.route("/", methods=["GET"])
 def index():
     return Response(json.dumps(home), mimetype="application/json")
+
 
 @app.route("/sites", methods=["GET"])
 def getSites():
@@ -73,11 +95,13 @@ def getSites():
 @app.route("/torrents", methods=["GET"])
 def getTorrents():
     search_key = request.args.get("key")
+    safe = request.args.get("safe")
     if search_key is None or search_key == "":
         return Response(json.dumps([]))
     return Response(
-        json.dumps(getTorrentsList(search_key)), mimetype="application/json"
+        json.dumps(getTorrentsList(search_key, safe)), mimetype="application/json"
     )
+
 
 @app.route("/magnet", methods=["GET"])
 def getTorrentData():
@@ -88,4 +112,4 @@ def getTorrentData():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
